@@ -15,17 +15,57 @@ export function Terminal() {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [booting, setBooting] = useState(true);
+  const [bootLines, setBootLines] = useState<string[]>([]);
+  const [currentTime, setCurrentTime] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const focusInput = useCallback(() => {
-    inputRef.current?.focus();
+  useEffect(() => {
+    setCurrentTime(new Date().toString());
   }, []);
 
   useEffect(() => {
+    if (!currentTime) return;
+
+    const allBootLines = [
+        `Last login: ${currentTime} on ttys001`,
+        'Booting DevTerminal v1.0.0...',
+        'Initializing system...',
+        'Loading kernel modules... [OK]',
+        'Mounting file systems... [OK]',
+        'Starting network services... [OK]',
+        'Checking for contraband code... [CLEAN]',
+        'Calibrating humor sensors... [CALIBRATED]',
+        'Connecting to portfolio matrix... [CONNECTED]',
+        'Welcome, user.',
+        'Type "help" to see a list of available commands.',
+    ];
+
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < allBootLines.length) {
+        setBootLines((prev) => [...prev, allBootLines[index]]);
+        index++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => setBooting(false), 500); // Wait a bit before switching
+      }
+    }, 150);
+
+    return () => clearInterval(interval);
+  }, [currentTime]);
+
+  const focusInput = useCallback(() => {
+    if (!booting) {
+        inputRef.current?.focus();
+    }
+  }, [booting]);
+
+  useEffect(() => {
     focusInput();
-  }, [focusInput]);
+  }, [focusInput, booting]);
   
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -34,13 +74,14 @@ export function Terminal() {
             viewport.scrollTop = viewport.scrollHeight;
         }
     }
-    if (!isProcessing) {
+    if (!isProcessing && !booting) {
       focusInput();
     }
-  }, [history, isProcessing, focusInput]);
+  }, [history, isProcessing, focusInput, bootLines, booting]);
 
 
   const handleCommand = useCallback(async (commandStr: string) => {
+    if (booting) return;
     if (commandStr.trim().toLowerCase() === 'clear') {
         setHistory([]);
         setInput('');
@@ -67,10 +108,10 @@ export function Terminal() {
     });
 
     setIsProcessing(false);
-  }, []);
+  }, [booting]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isProcessing) return;
+    if (isProcessing || booting) return;
 
     if (e.key === 'Enter') {
       handleCommand(input);
@@ -110,6 +151,13 @@ export function Terminal() {
     <div className="h-full w-full p-2 md:p-4 text-sm md:text-base" onClick={focusInput} aria-live="polite">
       <ScrollArea className="h-full" ref={scrollAreaRef}>
         <div className="flex flex-col gap-4">
+            <div className="flex flex-col">
+              {bootLines.map((line, i) => (
+                <p key={i} className="text-sm md:text-base">
+                  {line}
+                </p>
+              ))}
+            </div>
           {history.map((item, index) => (
             <div key={index}>
               <div className="flex items-center gap-2">
@@ -119,7 +167,7 @@ export function Terminal() {
               <div>{item.output}</div>
             </div>
           ))}
-          {!isProcessing && (
+          {!isProcessing && !booting && (
              <div className="flex items-center gap-2">
               <span className="text-accent">user@portfolio:~$</span>
               <span>{input}</span>
@@ -135,7 +183,7 @@ export function Terminal() {
           onKeyDown={handleKeyDown}
           className="opacity-0 w-0 h-0 p-0 m-0 border-0"
           autoFocus
-          disabled={isProcessing}
+          disabled={isProcessing || booting}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
