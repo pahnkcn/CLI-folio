@@ -19,13 +19,13 @@ export function Terminal() {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const focusInput = () => {
+  const focusInput = useCallback(() => {
     inputRef.current?.focus();
-  };
+  }, []);
 
   useEffect(() => {
     focusInput();
-  }, []);
+  }, [focusInput]);
   
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -34,7 +34,10 @@ export function Terminal() {
             viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [history, isProcessing]);
+    if (!isProcessing) {
+      focusInput();
+    }
+  }, [history, isProcessing, focusInput]);
 
 
   const handleCommand = useCallback(async (commandStr: string) => {
