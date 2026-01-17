@@ -1,6 +1,16 @@
 'use client';
 import React from 'react';
-import { COMMANDS, ABOUTME_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO, SKILLS, SKILL_DETAILS } from './data';
+import {
+  COMMANDS,
+  ABOUTME_TEXT,
+  PROJECTS,
+  EXPERIENCE,
+  EDUCATION,
+  RESUME,
+  CONTACT_INFO,
+  SKILLS,
+  SKILL_DETAILS,
+} from './data';
 import { generateAskResponse } from '@/ai/flows/generate-ask-response';
 import { useToast } from "@/hooks/use-toast"
 
@@ -194,11 +204,11 @@ const getSkills = () => (
   </div>
 );
 
-const normalizeSkillName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+const normalizeLookupValue = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const getSkillDetails = (name: string) => {
-  const normalizedName = normalizeSkillName(name);
-  const skill = SKILL_DETAILS.find(item => normalizeSkillName(item.name) === normalizedName);
+  const normalizedName = normalizeLookupValue(name);
+  const skill = SKILL_DETAILS.find(item => normalizeLookupValue(item.name) === normalizedName);
   if (!skill) {
     return <p>Skill not found: {name}. Try 'skills' to see a list of available skills.</p>;
   }
@@ -277,6 +287,51 @@ const getExperience = () => (
     </div>
 );
 
+const getEducation = () => (
+  <div className="space-y-4">
+    {EDUCATION.map((edu, index) => (
+      <div key={`${edu.school}-${index}`}>
+        <h3 className="font-bold text-accent">{edu.program}</h3>
+        <p className="text-sm text-muted-foreground">{edu.school} · {edu.period}</p>
+        <ul className="mt-2 list-disc list-inside space-y-1">
+          {edu.highlights.map((highlight, highlightIndex) => (
+            <li key={`${edu.school}-${highlightIndex}`}>{highlight}</li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+);
+
+const getResume = () => (
+  <div className="space-y-4">
+    <div>
+      <h3 className="text-lg font-bold text-accent">{RESUME.headline}</h3>
+      <p className="text-xs uppercase tracking-[0.2em] text-accent/80">
+        Updated {RESUME.lastUpdated}
+      </p>
+      <p className="mt-2 whitespace-pre-wrap">{RESUME.summary}</p>
+    </div>
+    <ul className="list-disc list-inside space-y-1">
+      {RESUME.highlights.map(item => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+    {RESUME.downloadLink ? (
+      <a
+        href={RESUME.downloadLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent hover:underline"
+      >
+        Download resume
+      </a>
+    ) : (
+      <p className="text-muted-foreground">Resume download link available on request.</p>
+    )}
+  </div>
+);
+
 const getContact = () => (
   <div className="space-y-2">
     {CONTACT_INFO.map(item => (
@@ -306,6 +361,8 @@ const getPortfolioSnapshot = () => ({
     link: project.link,
   })),
   experience: EXPERIENCE,
+  education: EDUCATION,
+  resume: RESUME,
   contact: CONTACT_INFO.map(item => ({
     name: item.name,
     value: item.value,
@@ -367,6 +424,10 @@ export const getCommandOutput = async (commandStr: string): Promise<React.ReactN
       return getProjectDetails(args.join(' '));
     case 'experience':
       return getExperience();
+    case 'education':
+      return getEducation();
+    case 'resume':
+      return getResume();
     case 'contact':
       return getContact();
     case 'ask':

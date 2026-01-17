@@ -37,6 +37,14 @@ const AI_PROMPTS = [
     label: 'CI/CD improvements',
     command: 'ask "How did you improve CI/CD speed and reliability?"',
   },
+  {
+    label: 'System design',
+    command: 'ask "Walk through a system you designed and the tradeoffs you made."',
+  },
+  {
+    label: 'Team leadership',
+    command: 'ask "How do you mentor teams and keep delivery reliable?"',
+  },
 ];
 
 type TerminalProps = {

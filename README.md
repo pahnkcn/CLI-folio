@@ -78,12 +78,16 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 The terminal interface supports various commands that visitors can use to explore your portfolio:
 
 - `help` - Display available commands
+- `ask "<question>"` - Ask the AI about projects, impact, and systems
 - `aboutme` - Learn about the developer
 - `projects` - View project portfolio
+- `project <name>` - View a specific project
 - `skills` - Show technical skills
+- `skill <name>` - View a specific skill
 - `contact` - Get contact information
 - `experience` - View work experience
 - `education` - Academic background
+- `resume` - Summary plus resume download link
 - `clear` - Clear the terminal
 
 ### Build for Production

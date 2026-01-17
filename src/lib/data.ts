@@ -1,6 +1,19 @@
 import { Github, Linkedin, Mail } from 'lucide-react';
 
-export const COMMANDS = ['help', 'ask', 'aboutme', 'skills', 'skill', 'projects', 'project', 'experience', 'contact', 'clear'] as const;
+export const COMMANDS = [
+  'help',
+  'ask',
+  'aboutme',
+  'skills',
+  'skill',
+  'projects',
+  'project',
+  'experience',
+  'education',
+  'resume',
+  'contact',
+  'clear',
+] as const;
 
 export const ABOUTME_TEXT = `Dev/DevOps Engineer. I build and automate scalable, reliable cloud systems.
 Passionate about CI/CD, Infrastructure as Code, and making developers' lives easier.`;
@@ -122,6 +135,30 @@ export const EXPERIENCE = [
       description: 'Developed and maintained backend services for a high-traffic e-commerce platform. Championed the adoption of containerization with Docker, improving developer onboarding and environment consistency. Contributed to infrastructure automation scripts using Python and Bash.'
     }
 ];
+
+export const EDUCATION = [
+  {
+    school: 'Bangkok Institute of Technology',
+    program: 'B.Sc. in Computer Engineering',
+    period: '2013 - 2017',
+    highlights: [
+      'Focused on distributed systems, networking, and infrastructure automation.',
+      'Capstone: built a monitoring dashboard for containerized services.',
+    ],
+  },
+];
+
+export const RESUME = {
+  headline: 'Dev/DevOps Engineer',
+  summary: 'I build resilient cloud platforms, automate delivery pipelines, and improve developer experience across teams.',
+  highlights: [
+    'Multi-cloud migrations and IaC-first delivery for AWS/GCP environments.',
+    'Kubernetes platform operations with observability and security baselines.',
+    'Automation mindset: reducing toil via scripts, workflows, and self-service tooling.',
+  ],
+  downloadLink: 'https://example.com/resume.pdf',
+  lastUpdated: 'Jan 2026',
+};
 
 export const CONTACT_INFO = [
   {
