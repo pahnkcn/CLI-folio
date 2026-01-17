@@ -107,8 +107,13 @@ export function Terminal({ aiStatus }: TerminalProps) {
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState('');
   const [aiPrompts, setAiPrompts] = useState<AiPrompt[]>(DEFAULT_AI_PROMPTS);
+  const [cursorIndex, setCursorIndex] = useState(0);
 
   const typedInput = input.trimStart();
+  const safeCursorIndex = Math.min(cursorIndex, input.length);
+  const inputBeforeCursor = input.slice(0, safeCursorIndex);
+  const inputAfterCursor = input.slice(safeCursorIndex);
+  const isCursorAtEnd = safeCursorIndex === input.length;
   const normalizedInput = typedInput.toLowerCase();
 
   const suggestions = useMemo(() => {
@@ -138,6 +143,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
   const suggestionSuffix = hasUniqueSuggestion && typedInput && activeSuggestion.toLowerCase().startsWith(normalizedInput)
     ? activeSuggestion.slice(typedInput.length)
     : '';
+  const showSuggestion = isCursorAtEnd && suggestionSuffix;
   const primarySuggestion = suggestions[0] ?? '';
   const getSuggestionParts = (suggestion: string) => {
     if (!normalizedInput) {
@@ -166,6 +172,12 @@ export function Terminal({ aiStatus }: TerminalProps) {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const syncCursor = useCallback((nextIndex: number) => {
+    setCursorIndex(nextIndex);
+    requestAnimationFrame(() => {
+      inputRef.current?.setSelectionRange(nextIndex, nextIndex);
+    });
+  }, []);
 
   useEffect(() => {
     setCurrentTime(new Date().toString());
@@ -249,7 +261,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
     if (!booting) {
         inputRef.current?.focus();
     }
-  }, [booting]);
+  }, [booting, syncCursor]);
 
   useEffect(() => {
     focusInput();
@@ -274,6 +286,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
         setHistory([]);
         setBootLines([]);
         setInput('');
+        syncCursor(0);
         setCommandHistory(prev => [commandStr, ...prev]);
         setHistoryIndex(-1);
         return;
@@ -297,6 +310,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
     }
     setHistoryIndex(-1);
     setInput('');
+    syncCursor(0);
 
     const output = await getCommandOutput(commandStr);
     
@@ -307,19 +321,21 @@ export function Terminal({ aiStatus }: TerminalProps) {
     });
 
     setIsProcessing(false);
-  }, [booting]);
+  }, [booting, syncCursor]);
 
   const handleQuickAction = useCallback((action: string) => {
     if (isProcessing || booting) return;
     setInput(action);
+    syncCursor(action.length);
     focusInput();
-  }, [booting, focusInput, isProcessing]);
+  }, [booting, focusInput, isProcessing, syncCursor]);
 
   const applySuggestion = useCallback(() => {
-    if (!activeSuggestion || !suggestionSuffix) return false;
+    if (!activeSuggestion || !suggestionSuffix || !isCursorAtEnd) return false;
     setInput(activeSuggestion);
+    syncCursor(activeSuggestion.length);
     return true;
-  }, [activeSuggestion, suggestionSuffix]);
+  }, [activeSuggestion, isCursorAtEnd, suggestionSuffix, syncCursor]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (isProcessing || booting) return;
@@ -332,6 +348,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
         const newIndex = historyIndex + 1;
         setHistoryIndex(newIndex);
         setInput(commandHistory[newIndex]);
+        syncCursor(commandHistory[newIndex].length);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -339,17 +356,31 @@ export function Terminal({ aiStatus }: TerminalProps) {
         const newIndex = historyIndex - 1;
         setHistoryIndex(newIndex);
         setInput(commandHistory[newIndex]);
+        syncCursor(commandHistory[newIndex].length);
       } else if (historyIndex <= 0) {
         setHistoryIndex(-1);
         setInput('');
+        syncCursor(0);
       }
     } else if (e.key === 'Tab') {
       e.preventDefault();
       applySuggestion();
+    } else if (e.key === 'ArrowLeft') {
+      if (safeCursorIndex > 0) {
+        e.preventDefault();
+        const nextIndex = safeCursorIndex - 1;
+        syncCursor(nextIndex);
+      }
     } else if (e.key === 'ArrowRight') {
-      if (suggestionSuffix) {
+      if (showSuggestion) {
         e.preventDefault();
         applySuggestion();
+        return;
+      }
+      if (safeCursorIndex < input.length) {
+        e.preventDefault();
+        const nextIndex = safeCursorIndex + 1;
+        syncCursor(nextIndex);
       }
     } else if (e.ctrlKey && e.key === 'l') {
         e.preventDefault();
@@ -455,9 +486,10 @@ export function Terminal({ aiStatus }: TerminalProps) {
             <div className="grid grid-cols-[auto,1fr] items-start gap-x-2 animate-rise">
               <span className="text-accent drop-shadow">user@portfolio:~$</span>
               <span className="min-w-0 whitespace-pre-wrap break-words text-foreground/90">
-                {typedInput}
+                {inputBeforeCursor}
                 <span className="inline-block h-[1em] w-2 align-text-bottom rounded-sm bg-primary shadow-[0_0_12px_rgba(152,251,152,0.7)] animate-blink"></span>
-                {suggestionSuffix && (
+                {inputAfterCursor}
+                {showSuggestion && (
                   <span className="text-muted-foreground/70">
                     <span className="text-accent/90">{primarySuggestion.slice(0, typedInput.length)}</span>
                     {suggestionSuffix}
@@ -490,7 +522,12 @@ export function Terminal({ aiStatus }: TerminalProps) {
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            const nextCursor = e.target.selectionStart ?? nextValue.length;
+            setInput(nextValue);
+            setCursorIndex(nextCursor);
+          }}
           onKeyDown={handleKeyDown}
           className="opacity-0 w-0 h-0 p-0 m-0 border-0"
           autoFocus
