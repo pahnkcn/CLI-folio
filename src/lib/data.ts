@@ -1,30 +1,43 @@
 import { Github, Linkedin, Mail } from 'lucide-react';
 
-export const COMMANDS = ['help', 'aboutme', 'skills', 'projects', 'project', 'experience', 'contact', 'clear'] as const;
+export const COMMANDS = ['help', 'aboutme', 'skills', 'projects', 'project', 'experience', 'contact', 'ask', 'clear'] as const;
 
 export const ABOUTME_TEXT = `Dev/DevOps Engineer. I build and automate scalable, reliable cloud systems.
 Passionate about CI/CD, Infrastructure as Code, and making developers' lives easier.`;
+
+export const SKILLS = [
+  'Terraform',
+  'AWS',
+  'Kubernetes',
+  'Docker',
+  'CI/CD',
+  'GitHub Actions',
+  'Linux',
+  'Prometheus',
+  'Grafana',
+  'Ansible',
+];
 
 export const PROJECTS = [
   {
     name: 'auto-scaler-cloud',
     title: 'Auto-Scaling Cloud Infrastructure',
     technologies: 'Terraform, AWS (EC2, ASG, ELB), Ansible',
-    briefOverview: 'A project to create a self-healing and auto-scaling web server environment on AWS using Infrastructure as Code.',
+    description: 'A project to create a self-healing and auto-scaling web server environment on AWS using Infrastructure as Code.',
     link: 'https://github.com'
   },
   {
     name: 'kubernetes-gitops',
     title: 'Kubernetes GitOps Pipeline',
     technologies: 'Kubernetes, Docker, ArgoCD, Helm, GitHub Actions',
-    briefOverview: 'Implemented a GitOps workflow for deploying microservices to a Kubernetes cluster.',
+    description: 'Implemented a GitOps workflow for deploying microservices to a Kubernetes cluster.',
     link: 'https://github.com'
   },
   {
     name: 'serverless-api',
     title: 'Serverless REST API',
     technologies: 'AWS Lambda, API Gateway, DynamoDB, Serverless Framework',
-    briefOverview: 'Built a highly available and scalable serverless REST API for a social media application backend.',
+    description: 'Built a highly available and scalable serverless REST API for a social media application backend.',
     link: 'https://github.com'
   },
 ];

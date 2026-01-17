@@ -1,8 +1,7 @@
 'use client';
 import React from 'react';
-import { COMMANDS, ABOUTME_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO } from './data';
-import { generateSkillsList } from '@/ai/flows/generate-skills-list';
-import { generateProjectDescription } from '@/ai/flows/generate-project-description';
+import { COMMANDS, ABOUTME_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO, SKILLS } from './data';
+import { generateAskResponse } from '@/ai/flows/generate-ask-response';
 import { useToast } from "@/hooks/use-toast"
 
 type AiErrorInfo = {
@@ -116,19 +115,11 @@ const getAboutMe = () => (
   <p className="whitespace-pre-wrap">{ABOUTME_TEXT}</p>
 );
 
-const getSkills = async () => {
-  try {
-    const skills = await generateSkillsList({});
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-        {skills.map(skill => <span key={skill}>{skill}</span>)}
-      </div>
-    );
-  } catch (error) {
-    console.error(error);
-    return renderAiError(error);
-  }
-};
+const getSkills = () => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
+    {SKILLS.map(skill => <span key={skill}>{skill}</span>)}
+  </div>
+);
 
 const getProjects = () => (
   <div>
@@ -143,31 +134,20 @@ const getProjects = () => (
   </div>
 );
 
-const getProjectDetails = async (name: string) => {
+const getProjectDetails = (name: string) => {
   const project = PROJECTS.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (!project) {
     return <p>Project not found: {name}. Try 'projects' to see a list of available projects.</p>;
   }
-  
-  try {
-    const { projectDescription } = await generateProjectDescription({
-      projectName: project.title,
-      technologies: project.technologies,
-      briefOverview: project.briefOverview
-    });
 
-    return (
-        <div>
-            <h3 className="text-lg font-bold text-accent">{project.title}</h3>
-            <p className="font-mono text-sm text-muted-foreground">{project.technologies}</p>
-            <p className="mt-2 whitespace-pre-wrap">{projectDescription}</p>
-            {project.link && <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline mt-2 inline-block">View on GitHub</a>}
-        </div>
-    );
-  } catch (error) {
-    console.error(error);
-    return renderAiError(error);
-  }
+  return (
+      <div>
+          <h3 className="text-lg font-bold text-accent">{project.title}</h3>
+          <p className="font-mono text-sm text-muted-foreground">{project.technologies}</p>
+          <p className="mt-2 whitespace-pre-wrap">{project.description}</p>
+          {project.link && <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline mt-2 inline-block">View on GitHub</a>}
+      </div>
+  );
 };
 
 
@@ -197,8 +177,48 @@ const getContact = () => (
   </div>
 );
 
+const getPortfolioSnapshot = () => ({
+  aboutMe: ABOUTME_TEXT,
+  skills: SKILLS,
+  projects: PROJECTS.map(project => ({
+    name: project.name,
+    title: project.title,
+    technologies: project.technologies,
+    description: project.description,
+    link: project.link,
+  })),
+  experience: EXPERIENCE,
+  contact: CONTACT_INFO.map(item => ({
+    name: item.name,
+    value: item.value,
+    href: item.href,
+  })),
+});
+
+const getAskResponse = async (question: string) => {
+  const trimmedQuestion = question.trim();
+  if (!trimmedQuestion) {
+    return <p>Please provide a question after "ask". Example: ask Tell me about your projects.</p>;
+  }
+
+  try {
+    const { answer } = await generateAskResponse({
+      question: trimmedQuestion,
+      portfolio: getPortfolioSnapshot(),
+    });
+    return <p className="whitespace-pre-wrap">{answer}</p>;
+  } catch (error) {
+    console.error(error);
+    return renderAiError(error);
+  }
+};
+
 export const getCommandOutput = async (commandStr: string): Promise<React.ReactNode> => {
-  const [command, ...args] = commandStr.trim().toLowerCase().split(' ');
+  const trimmed = commandStr.trim();
+  if (!trimmed) return '';
+  const [commandRaw, ...args] = trimmed.split(' ');
+  const command = commandRaw.toLowerCase();
+  const argsText = trimmed.slice(commandRaw.length).trim();
 
   switch(command) {
     case 'help':
@@ -206,20 +226,21 @@ export const getCommandOutput = async (commandStr: string): Promise<React.ReactN
     case 'aboutme':
       return getAboutMe();
     case 'skills':
-      return await getSkills();
+      return getSkills();
     case 'projects':
       return getProjects();
     case 'project':
       if (args.length === 0) return <p>Please specify a project name. Use 'projects' to see a list.</p>;
-      return await getProjectDetails(args[0]);
+      return getProjectDetails(args.join(' '));
     case 'experience':
       return getExperience();
     case 'contact':
       return getContact();
+    case 'ask':
+      return await getAskResponse(argsText);
     case 'clear':
       return ''; // special case handled in terminal component
     default:
-      if (!command) return '';
       const closestCommand = getClosestCommand(command);
       if (closestCommand) {
         return (
