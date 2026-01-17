@@ -4,7 +4,7 @@
 
 - Boot Sequence Animation: Simulate a system boot sequence with loading messages and initializations upon loading the page.
 - Terminal Interface: Create a terminal-like interface where users can type commands and receive outputs.
-- Command Handling: Implement command parsing to recognize and execute predefined commands such as 'help', 'whoami', 'skills', 'projects', 'project <name>', 'experience', 'contact', and 'clear'.
+- Command Handling: Implement command parsing to recognize and execute predefined commands such as 'help', 'aboutme', 'skills', 'projects', 'project <name>', 'experience', 'contact', and 'clear'.
 - Command History: Enable users to cycle through previously entered commands using the up and down arrow keys.
 - Autocomplete: Provide command autocompletion suggestions as the user types, triggered by the tab key.
 - Dynamic Content Display: Render project and work experience details based on the selected 'project <name>' and 'experience' commands.  Content should be tool assisted in its placement.

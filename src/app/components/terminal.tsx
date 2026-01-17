@@ -17,7 +17,7 @@ const ASCII_ART = [
   ' \\____|_____|___|     |_|  \\___/|_|_|\\___/ ',
 ];
 
-const QUICK_ACTIONS = ['help', 'projects', 'about', 'contact'];
+const QUICK_ACTIONS = ['help', 'aboutme', 'projects', 'contact'];
 
 export function Terminal() {
   const [input, setInput] = useState('');

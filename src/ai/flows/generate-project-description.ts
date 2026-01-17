@@ -9,8 +9,8 @@
  * - `GenerateProjectDescriptionOutput`: The output type for the `generateProjectDescription` function, containing the generated project description.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {generateAiText, enforceAiCooldown} from '@/ai/client';
+import {z} from 'zod';
 
 const GenerateProjectDescriptionInputSchema = z.object({
   projectName: z.string().describe('The name of the project.'),
@@ -28,34 +28,26 @@ export type GenerateProjectDescriptionOutput = z.infer<
   typeof GenerateProjectDescriptionOutputSchema
 >;
 
+const buildProjectPrompt = (input: GenerateProjectDescriptionInput) => `You are an expert software engineer specializing in creating compelling project descriptions for developer portfolios.
+
+Based on the project's name, technologies used, and a brief overview, generate a detailed and engaging project description.
+
+Return only a JSON object with a single key "projectDescription".
+
+Project Name: ${input.projectName}
+Technologies Used: ${input.technologies}
+Brief Overview: ${input.briefOverview}
+`;
+
 export async function generateProjectDescription(
   input: GenerateProjectDescriptionInput
 ): Promise<GenerateProjectDescriptionOutput> {
-  return generateProjectDescriptionFlow(input);
+  const parsedInput = GenerateProjectDescriptionInputSchema.parse(input);
+  await enforceAiCooldown('project');
+  const response = await generateAiText({
+    systemPrompt: 'Return only JSON. Do not wrap in markdown.',
+    userPrompt: buildProjectPrompt(parsedInput),
+  });
+  const parsed = JSON.parse(response);
+  return GenerateProjectDescriptionOutputSchema.parse(parsed);
 }
-
-const prompt = ai.definePrompt({
-  name: 'generateProjectDescriptionPrompt',
-  input: {schema: GenerateProjectDescriptionInputSchema},
-  output: {schema: GenerateProjectDescriptionOutputSchema},
-  prompt: `You are an expert software engineer specializing in creating compelling project descriptions for developer portfolios.
-
-  Based on the project's name, technologies used, and a brief overview, generate a detailed and engaging project description.
-
-  Project Name: {{{projectName}}}
-  Technologies Used: {{{technologies}}}
-  Brief Overview: {{{briefOverview}}}
-  `,
-});
-
-const generateProjectDescriptionFlow = ai.defineFlow(
-  {
-    name: 'generateProjectDescriptionFlow',
-    inputSchema: GenerateProjectDescriptionInputSchema,
-    outputSchema: GenerateProjectDescriptionOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

@@ -8,8 +8,8 @@
  * - GenerateSkillsListOutput - The return type for the generateSkillsList function (string array).
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {generateAiText, enforceAiCooldown} from '@/ai/client';
+import {z} from 'zod';
 
 const GenerateSkillsListInputSchema = z.object({});
 export type GenerateSkillsListInput = z.infer<typeof GenerateSkillsListInputSchema>;
@@ -17,35 +17,25 @@ export type GenerateSkillsListInput = z.infer<typeof GenerateSkillsListInputSche
 const GenerateSkillsListOutputSchema = z.array(z.string());
 export type GenerateSkillsListOutput = z.infer<typeof GenerateSkillsListOutputSchema>;
 
+const skillsPrompt = `You are a DevOps Engineer expert.
+
+Generate a list of relevant technical skills for a DevOps Engineer. These skills should be suitable to list on a portfolio website.
+
+Focus on skills related to automation, reliability, scalability, cloud technologies, and monitoring.
+
+Return only a JSON array of strings.
+
+Example:
+["Docker", "Kubernetes", "CI/CD", "Cloud", "Monitoring", "Terraform", "Ansible", "AWS", "GCP", "Azure"]
+`;
+
 export async function generateSkillsList(input: GenerateSkillsListInput): Promise<GenerateSkillsListOutput> {
-  return generateSkillsListFlow(input);
+  GenerateSkillsListInputSchema.parse(input);
+  await enforceAiCooldown('skills');
+  const response = await generateAiText({
+    systemPrompt: 'Return only JSON. Do not wrap in markdown.',
+    userPrompt: skillsPrompt,
+  });
+  const parsed = JSON.parse(response);
+  return GenerateSkillsListOutputSchema.parse(parsed);
 }
-
-const prompt = ai.definePrompt({
-  name: 'generateSkillsListPrompt',
-  input: {schema: GenerateSkillsListInputSchema},
-  output: {schema: GenerateSkillsListOutputSchema},
-  prompt: `You are a DevOps Engineer expert.
-
-  Generate a list of relevant technical skills for a DevOps Engineer. These skills should be suitable to list on a portfolio website.
-
-  Focus on skills related to automation, reliability, scalability, cloud technologies, and monitoring.
-
-  The output should be a JSON array of strings.
-
-  Example:
-  ["Docker", "Kubernetes", "CI/CD", "Cloud", "Monitoring", "Terraform", "Ansible", "AWS", "GCP", "Azure"]
-  `,
-});
-
-const generateSkillsListFlow = ai.defineFlow(
-  {
-    name: 'generateSkillsListFlow',
-    inputSchema: GenerateSkillsListInputSchema,
-    outputSchema: GenerateSkillsListOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

@@ -1,21 +1,65 @@
 'use client';
 import React from 'react';
-import { COMMANDS, WHOAMI_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO } from './data';
+import { COMMANDS, ABOUTME_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO } from './data';
 import { generateSkillsList } from '@/ai/flows/generate-skills-list';
 import { generateProjectDescription } from '@/ai/flows/generate-project-description';
 import { useToast } from "@/hooks/use-toast"
 
-const AiError = () => {
+type AiErrorInfo = {
+  title: string;
+  description: string;
+  variant?: 'default' | 'destructive';
+};
+
+const parseAiError = (error: unknown): AiErrorInfo => {
+  const message = error instanceof Error ? error.message : '';
+  if (message.startsWith('AI_COOLDOWN:')) {
+    const [, secondsRaw] = message.split(':');
+    const seconds = Number.parseInt(secondsRaw ?? '', 10);
+    const duration = Number.isFinite(seconds) && seconds > 0 ? `${seconds} seconds` : 'a moment';
+    return {
+      title: 'Cooldown active',
+      description: `Please wait ${duration} before running this AI command again.`,
+      variant: 'default',
+    };
+  }
+  if (message.startsWith('Missing')) {
+    return {
+      title: 'AI configuration missing',
+      description: `${message} Add it to your server environment (.env.local).`,
+      variant: 'destructive',
+    };
+  }
+  if (message.startsWith('Provider')) {
+    return {
+      title: 'AI provider error',
+      description: 'The AI provider returned an error. Please try again later.',
+      variant: 'destructive',
+    };
+  }
+  return {
+    title: 'AI Error',
+    description: 'Failed to get response from AI model. Please check the server console or your API key.',
+    variant: 'destructive',
+  };
+};
+
+const AiError = ({ title, description, variant = 'destructive' }: AiErrorInfo) => {
   const { toast } = useToast();
   React.useEffect(() => {
     toast({
-      title: "AI Error",
-      description: "Failed to get response from AI model. Please check the server console or your API key.",
-      variant: "destructive",
+      title,
+      description,
+      variant,
     })
-  }, [toast]);
-  return <p className="text-destructive">Error communicating with AI. See toast for details.</p>;
+  }, [description, title, toast, variant]);
+  return <p className="text-destructive">{description}</p>;
 }
+
+const renderAiError = (error: unknown) => {
+  const info = parseAiError(error);
+  return <AiError {...info} />;
+};
 
 const getEditDistance = (source: string, target: string) => {
   const sourceLength = source.length;
@@ -68,8 +112,8 @@ const getHelp = () => (
   </div>
 );
 
-const getWhoAmI = () => (
-  <p className="whitespace-pre-wrap">{WHOAMI_TEXT}</p>
+const getAboutMe = () => (
+  <p className="whitespace-pre-wrap">{ABOUTME_TEXT}</p>
 );
 
 const getSkills = async () => {
@@ -82,7 +126,7 @@ const getSkills = async () => {
     );
   } catch (error) {
     console.error(error);
-    return <AiError />;
+    return renderAiError(error);
   }
 };
 
@@ -122,7 +166,7 @@ const getProjectDetails = async (name: string) => {
     );
   } catch (error) {
     console.error(error);
-    return <AiError />;
+    return renderAiError(error);
   }
 };
 
@@ -159,8 +203,8 @@ export const getCommandOutput = async (commandStr: string): Promise<React.ReactN
   switch(command) {
     case 'help':
       return getHelp();
-    case 'whoami':
-      return getWhoAmI();
+    case 'aboutme':
+      return getAboutMe();
     case 'skills':
       return await getSkills();
     case 'projects':
