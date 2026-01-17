@@ -9,7 +9,6 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 - **AI Integration**: Multi-provider AI (Gemini, OpenAI, DeepSeek, Grok) with server-only keys and cooldown protection
 - **Responsive Design**: Mobile-friendly with Tailwind CSS
 - **Dark Theme**: Eye-friendly dark mode with terminal aesthetics
-- **Firebase Hosting**: Deployed on Firebase App Hosting
 - **Component Library**: Built with Radix UI and shadcn/ui components
 
 ## 🛠️ Tech Stack
@@ -24,8 +23,6 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 
 ### Backend & AI
 - **AI Layer**: Server-side provider router (Gemini / OpenAI / DeepSeek / xAI Grok)
-- **Database**: Firebase
-- **Hosting**: Firebase App Hosting
 
 ### Development Tools
 - **Package Manager**: npm
@@ -67,7 +64,6 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
    # Cooldown for AI commands (ms). Default is 120000 (2 minutes).
    AI_COOLDOWN_MS=120000
 
-   FIREBASE_CONFIG=your_firebase_config
    ```
 
 4. **Run the development server**
@@ -89,32 +85,6 @@ The terminal interface supports various commands that visitors can use to explor
 - `experience` - View work experience
 - `education` - Academic background
 - `clear` - Clear the terminal
-
-## 🚀 Deployment
-
-### Firebase App Hosting
-
-This project is configured for Firebase App Hosting:
-
-1. **Install Firebase CLI**
-   ```bash
-   npm install -g firebase-tools
-   ```
-
-2. **Login to Firebase**
-   ```bash
-   firebase login
-   ```
-
-3. **Initialize Firebase**
-   ```bash
-   firebase init hosting
-   ```
-
-4. **Deploy**
-   ```bash
-   firebase deploy
-   ```
 
 ### Build for Production
 
@@ -142,8 +112,7 @@ TerminalPortfolio/
 ├── docs/                   # Documentation
 ├── package.json           # Dependencies and scripts
 ├── tailwind.config.ts     # Tailwind configuration
-├── tsconfig.json          # TypeScript configuration
-└── apphosting.yaml        # Firebase App Hosting config
+└── tsconfig.json          # TypeScript configuration
 ```
 
 ## 🎨 Customization
