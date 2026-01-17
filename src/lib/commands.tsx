@@ -259,7 +259,8 @@ const getProjects = () => {
 };
 
 const getProjectDetails = (name: string) => {
-  const project = PROJECTS.find(p => p.name.toLowerCase() === name.toLowerCase());
+  const normalizedName = normalizeLookupValue(name);
+  const project = PROJECTS.find(p => normalizeLookupValue(p.name) === normalizedName);
   if (!project) {
     return <p>Project not found: {name}. Try 'projects' to see a list of available projects.</p>;
   }
