@@ -60,6 +60,62 @@ const renderAiError = (error: unknown) => {
   return <AiError {...info} />;
 };
 
+type TypingResponseProps = {
+  text: string;
+  className?: string;
+};
+
+const TypingResponse = ({ text, className }: TypingResponseProps) => {
+  const [displayed, setDisplayed] = React.useState('');
+  const [isTyping, setIsTyping] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const reduceMotion = typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      setDisplayed(text);
+      setIsTyping(false);
+      return;
+    }
+
+    const totalDurationMs = Math.min(12000, Math.max(3200, text.length * 24));
+    const intervalMs = 30;
+    const step = Math.max(1, Math.ceil(text.length / (totalDurationMs / intervalMs)));
+    let index = 0;
+    setDisplayed('');
+    setIsTyping(true);
+
+    const interval = window.setInterval(() => {
+      if (cancelled) return;
+      index = Math.min(text.length, index + step);
+      setDisplayed(text.slice(0, index));
+      if (index >= text.length) {
+        setIsTyping(false);
+        clearInterval(interval);
+      }
+    }, intervalMs);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [text]);
+
+  const containerClassName = ['whitespace-pre-wrap', className]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className={containerClassName}>
+      <span>{displayed}</span>
+      {isTyping && (
+        <span className="ml-1 inline-block h-4 w-2 animate-blink rounded-sm bg-primary/80 align-text-bottom" />
+      )}
+    </div>
+  );
+};
+
 const getEditDistance = (source: string, target: string) => {
   const sourceLength = source.length;
   const targetLength = target.length;
@@ -107,7 +163,14 @@ const getClosestCommand = (input: string) => {
 
 const getHelp = () => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-    {COMMANDS.map(cmd => <span key={cmd}>{cmd}</span>)}
+    {COMMANDS.map(cmd => {
+      const label = cmd === 'project'
+        ? 'project <name>'
+        : cmd === 'ask'
+          ? 'ask <question>'
+          : cmd;
+      return <span key={cmd}>{label}</span>;
+    })}
   </div>
 );
 
@@ -206,7 +269,7 @@ const getAskResponse = async (question: string) => {
       question: trimmedQuestion,
       portfolio: getPortfolioSnapshot(),
     });
-    return <p className="whitespace-pre-wrap">{answer}</p>;
+    return <TypingResponse text={answer} />;
   } catch (error) {
     console.error(error);
     return renderAiError(error);

@@ -1,6 +1,6 @@
 import { Github, Linkedin, Mail } from 'lucide-react';
 
-export const COMMANDS = ['help', 'aboutme', 'skills', 'projects', 'project', 'experience', 'contact', 'ask', 'clear'] as const;
+export const COMMANDS = ['help', 'ask', 'aboutme', 'skills', 'projects', 'project', 'experience', 'contact', 'clear'] as const;
 
 export const ABOUTME_TEXT = `Dev/DevOps Engineer. I build and automate scalable, reliable cloud systems.
 Passionate about CI/CD, Infrastructure as Code, and making developers' lives easier.`;
