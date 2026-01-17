@@ -2,11 +2,23 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getCommandOutput } from '@/lib/commands';
+import { generatePromptSuggestions } from '@/ai/flows/generate-prompt-suggestions';
 import { COMMANDS, PROJECTS } from '@/lib/data';
 
 type HistoryItem = {
   command: string;
   output: React.ReactNode;
+};
+
+type AiStatus = {
+  label: string;
+  configured: boolean;
+  provider: string;
+};
+
+type AiPrompt = {
+  label: string;
+  command: string;
 };
 
 const ASCII_ART = [
@@ -17,9 +29,75 @@ const ASCII_ART = [
   ' \\____|_____|___|     |_|  \\___/|_|_|\\___/ ',
 ];
 
-const QUICK_ACTIONS = ['help', 'projects', 'about', 'contact'];
+const QUICK_ACTIONS = ['help', 'aboutme', 'projects', 'contact'];
+const DEFAULT_AI_PROMPTS: AiPrompt[] = [
+  {
+    label: 'Impact highlights',
+    command: 'ask "What measurable impact did you drive in your roles?"',
+  },
+  {
+    label: 'Cloud systems',
+    command: 'ask "Which cloud systems or architectures are you most proud of?"',
+  },
+  {
+    label: 'CI/CD improvements',
+    command: 'ask "How did you improve CI/CD speed and reliability?"',
+  },
+  {
+    label: 'Automation wins',
+    command: 'ask "Which automation work saved the most engineering time?"',
+  },
+];
+const AI_PROMPT_CACHE_KEY = 'terminal-ai-prompts';
+const AI_PROMPT_CACHE_TIMESTAMP_KEY = 'terminal-ai-prompts:timestamp';
+const AI_PROMPT_CACHE_MS = 120000;
 
-export function Terminal() {
+const formatAskCommand = (question: string) => `ask "${question}"`;
+
+const parseCachedPrompts = (raw: string | null): AiPrompt[] | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    const valid = parsed
+      .filter((prompt: AiPrompt) => Boolean(prompt?.label && prompt?.command))
+      .map((prompt: AiPrompt) => ({
+        label: prompt.label.trim(),
+        command: prompt.command.trim(),
+      }))
+      .filter(prompt => prompt.label && prompt.command);
+    return valid.length ? valid : null;
+  } catch {
+    return null;
+  }
+};
+
+const readCachedPrompts = () => {
+  if (typeof window === 'undefined') return null;
+  const cached = parseCachedPrompts(window.localStorage.getItem(AI_PROMPT_CACHE_KEY));
+  if (!cached) return null;
+  const timestampRaw = window.localStorage.getItem(AI_PROMPT_CACHE_TIMESTAMP_KEY);
+  const timestamp = Number.parseInt(timestampRaw ?? '', 10);
+  return {
+    prompts: cached,
+    timestamp: Number.isFinite(timestamp) ? timestamp : 0,
+  };
+};
+
+const writeCachedPrompts = (prompts: AiPrompt[]) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(AI_PROMPT_CACHE_KEY, JSON.stringify(prompts));
+  window.localStorage.setItem(AI_PROMPT_CACHE_TIMESTAMP_KEY, String(Date.now()));
+};
+
+const isCooldownError = (error: unknown) =>
+  error instanceof Error && error.message.startsWith('AI_COOLDOWN:');
+
+type TerminalProps = {
+  aiStatus: AiStatus;
+};
+
+export function Terminal({ aiStatus }: TerminalProps) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -28,6 +106,7 @@ export function Terminal() {
   const [booting, setBooting] = useState(true);
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState('');
+  const [aiPrompts, setAiPrompts] = useState<AiPrompt[]>(DEFAULT_AI_PROMPTS);
 
   const suggestions = useMemo(() => {
     const normalizedInput = input.trimStart().toLowerCase();
@@ -55,6 +134,10 @@ export function Terminal() {
     : isProcessing
       ? 'Executing command'
       : 'Ready for input';
+  const isAiConfigured = aiStatus?.configured ?? false;
+  const aiBadgeTone = isAiConfigured ? 'bg-emerald-400' : 'bg-rose-400';
+  const aiBadgeLabel = isAiConfigured ? `AI online · ${aiStatus.label}` : 'AI offline';
+  const activeAiPrompts = aiPrompts.length ? aiPrompts : DEFAULT_AI_PROMPTS;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -62,6 +145,49 @@ export function Terminal() {
   useEffect(() => {
     setCurrentTime(new Date().toString());
   }, []);
+
+  useEffect(() => {
+    if (!isAiConfigured) {
+      setAiPrompts(DEFAULT_AI_PROMPTS);
+      return;
+    }
+
+    const cached = readCachedPrompts();
+    if (cached?.prompts?.length) {
+      setAiPrompts(cached.prompts);
+    }
+
+    const cacheFresh = cached && Date.now() - cached.timestamp < AI_PROMPT_CACHE_MS;
+    if (cacheFresh) return;
+
+    let cancelled = false;
+
+    const loadPrompts = async () => {
+      try {
+        const result = await generatePromptSuggestions();
+        if (cancelled) return;
+        const prompts = result.prompts.map(prompt => ({
+          label: prompt.label,
+          command: formatAskCommand(prompt.question),
+        }));
+        if (prompts.length) {
+          setAiPrompts(prompts);
+          writeCachedPrompts(prompts);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        if (!isCooldownError(error)) {
+          console.error('Failed to load AI prompt suggestions.', error);
+        }
+      }
+    };
+
+    loadPrompts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAiConfigured]);
 
   useEffect(() => {
     if (!currentTime) return;
@@ -121,6 +247,7 @@ export function Terminal() {
     if (booting) return;
     if (commandStr.trim().toLowerCase() === 'clear') {
         setHistory([]);
+        setBootLines([]);
         setInput('');
         setCommandHistory(prev => [commandStr, ...prev]);
         setHistoryIndex(-1);
@@ -128,7 +255,17 @@ export function Terminal() {
     }
 
     setIsProcessing(true);
-    const newHistoryItem: HistoryItem = { command: commandStr, output: <span className="animate-pulse">Processing...</span> };
+    const normalizedCommand = commandStr.trim().toLowerCase();
+    const isAskCommand = normalizedCommand === 'ask' || normalizedCommand.startsWith('ask ');
+    const processingLabel = isAskCommand ? 'Consulting AI model...' : 'Processing...';
+    const newHistoryItem: HistoryItem = {
+      command: commandStr,
+      output: (
+        <span className={`animate-pulse ${isAskCommand ? 'text-accent' : ''}`}>
+          {processingLabel}
+        </span>
+      ),
+    };
     setHistory(prev => [...prev, newHistoryItem]);
     if(commandStr.trim()){
       setCommandHistory(prev => [commandStr, ...prev]);
@@ -192,6 +329,7 @@ export function Terminal() {
     } else if (e.ctrlKey && e.key === 'l') {
         e.preventDefault();
         setHistory([]);
+        setBootLines([]);
     }
   };
 
@@ -222,7 +360,41 @@ export function Terminal() {
             <p className="mt-2 text-xs text-muted-foreground">
               Tip: use <span className="text-foreground">Tab</span> to autocomplete, <span className="text-foreground">↑</span>/<span className="text-foreground">↓</span> to browse history.
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+            <div className="mt-4 rounded-xl border border-accent/40 bg-[radial-gradient(circle_at_top,_rgba(173,216,230,0.18),_rgba(18,18,18,0.95)_65%)] px-4 py-3 text-xs shadow-[0_0_25px_rgba(173,216,230,0.15)]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-accent/80">Ask AI</p>
+                  <p className="mt-1 text-sm text-foreground/90">
+                    Ask the portfolio AI about impact, projects, or systems. It answers using verified portfolio data.
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-background/50 px-3 py-1 text-[11px] text-accent">
+                  <span className={`h-2 w-2 rounded-full ${aiBadgeTone} ${isAiConfigured ? 'animate-pulse' : ''}`} />
+                  {aiBadgeLabel}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {activeAiPrompts.map((prompt: AiPrompt) => (
+                  <button
+                    key={prompt.label}
+                    type="button"
+                    onClick={() => handleQuickAction(prompt.command)}
+                    disabled={isProcessing || booting || !isAiConfigured}
+                    className="rounded-full border border-accent/40 bg-secondary/60 px-3 py-1 text-[11px] text-foreground/80 transition hover:border-accent hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {prompt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {isAiConfigured ? (
+                  <>Try typing <span className="text-foreground">ask "&lt;question&gt;"</span> or tap a prompt.</>
+                ) : (
+                  <>AI needs an API key in <span className="text-foreground">.env.local</span> to answer questions.</>
+                )}
+              </p>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
               <span className="text-muted-foreground">Quick actions:</span>
               {QUICK_ACTIONS.map(action => (
                 <button

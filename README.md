@@ -6,10 +6,9 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 
 - **Terminal Interface**: Interactive CLI-style portfolio navigation
 - **Modern Tech Stack**: Built with Next.js 15, React 19, and TypeScript
-- **AI Integration**: Powered by Google Genkit for intelligent responses
+- **AI Integration**: Multi-provider AI (Gemini, OpenAI, DeepSeek, Grok) with server-only keys and cooldown protection
 - **Responsive Design**: Mobile-friendly with Tailwind CSS
 - **Dark Theme**: Eye-friendly dark mode with terminal aesthetics
-- **Firebase Hosting**: Deployed on Firebase App Hosting
 - **Component Library**: Built with Radix UI and shadcn/ui components
 
 ## 🛠️ Tech Stack
@@ -23,10 +22,7 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 - **Forms**: React Hook Form + Zod validation
 
 ### Backend & AI
-- **AI Framework**: Google Genkit
-- **AI Provider**: Google Generative AI
-- **Database**: Firebase
-- **Hosting**: Firebase App Hosting
+- **AI Layer**: Server-side provider router (Gemini / OpenAI / DeepSeek / xAI Grok)
 
 ### Development Tools
 - **Package Manager**: npm
@@ -49,8 +45,25 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 3. **Set up environment variables**
    Create a `.env.local` file in the root directory:
    ```env
-   GOOGLE_GENAI_API_KEY=your_google_genai_api_key
-   FIREBASE_CONFIG=your_firebase_config
+   # Choose the provider to use for AI commands.
+   # Options: gemini | openai | deepseek | grok
+   AI_PROVIDER=gemini
+
+   # Provider API keys (keep these server-side only).
+   GEMINI_API_KEY=your_gemini_api_key
+   OPENAI_API_KEY=your_openai_api_key
+   DEEPSEEK_API_KEY=your_deepseek_api_key
+   XAI_API_KEY=your_xai_api_key
+
+   # Optional model overrides
+   GEMINI_MODEL=gemini-2.5-flash
+   OPENAI_MODEL=gpt-4o-mini
+   DEEPSEEK_MODEL=deepseek-chat
+   XAI_MODEL=grok-4
+
+   # Cooldown for AI commands (ms). Default is 120000 (2 minutes).
+   AI_COOLDOWN_MS=120000
+
    ```
 
 4. **Run the development server**
@@ -65,39 +78,17 @@ A modern developer portfolio built with Next.js 15, featuring an interactive ter
 The terminal interface supports various commands that visitors can use to explore your portfolio:
 
 - `help` - Display available commands
-- `about` - Learn about the developer
+- `ask "<question>"` - Ask the AI about projects, impact, and systems
+- `aboutme` - Learn about the developer
 - `projects` - View project portfolio
+- `project <name>` - View a specific project
 - `skills` - Show technical skills
+- `skill <name>` - View a specific skill
 - `contact` - Get contact information
 - `experience` - View work experience
 - `education` - Academic background
+- `resume` - Summary plus resume download link
 - `clear` - Clear the terminal
-
-## 🚀 Deployment
-
-### Firebase App Hosting
-
-This project is configured for Firebase App Hosting:
-
-1. **Install Firebase CLI**
-   ```bash
-   npm install -g firebase-tools
-   ```
-
-2. **Login to Firebase**
-   ```bash
-   firebase login
-   ```
-
-3. **Initialize Firebase**
-   ```bash
-   firebase init hosting
-   ```
-
-4. **Deploy**
-   ```bash
-   firebase deploy
-   ```
 
 ### Build for Production
 
@@ -125,8 +116,7 @@ TerminalPortfolio/
 ├── docs/                   # Documentation
 ├── package.json           # Dependencies and scripts
 ├── tailwind.config.ts     # Tailwind configuration
-├── tsconfig.json          # TypeScript configuration
-└── apphosting.yaml        # Firebase App Hosting config
+└── tsconfig.json          # TypeScript configuration
 ```
 
 ## 🎨 Customization
@@ -143,7 +133,7 @@ The project uses Tailwind CSS with a dark theme. Modify `tailwind.config.ts` to 
 
 ### AI Responses
 
-Customize AI responses by modifying the prompts and handlers in `src/ai/` directory.
+Customize AI responses by modifying the prompts and handlers in `src/ai/` directory. Provider selection is controlled by `AI_PROVIDER` and server-only API keys, so secrets never reach the browser.
 
 ## 🤝 Contributing
 
@@ -162,7 +152,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Next.js](https://nextjs.org/) - The React framework
 - [Radix UI](https://www.radix-ui.com/) - Unstyled, accessible components
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
-- [Google Genkit](https://firebase.google.com/docs/genkit) - AI framework
 - [Lucide](https://lucide.dev/) - Beautiful icons
 
 ## 📞 Contact
