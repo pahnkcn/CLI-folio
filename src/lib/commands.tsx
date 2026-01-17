@@ -354,7 +354,7 @@ const getAskResponse = async (question: string) => {
   }
 
   if (!trimmedQuestion.startsWith('"')) {
-    return <p>Ask must start with a quote. Example: ask "Tell me about your projects."</p>;
+    return <p>Please enclose your question in double quotes. Example: ask "Tell me about your projects."</p>;
   }
 
   const unquoted = trimmedQuestion.endsWith('"')
