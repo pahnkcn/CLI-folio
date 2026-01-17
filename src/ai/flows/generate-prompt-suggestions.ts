@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { generateAiText, enforceAiCooldown } from '@/ai/client';
+import { extractJsonPayload } from '@/ai/extract-json-payload';
 import { getPortfolioSnapshot } from '@/lib/data';
 
 type PromptSuggestion = {
@@ -48,24 +49,6 @@ const dedupePrompts = (prompts: PromptSuggestion[]) => {
     seen.add(key);
     return true;
   });
-};
-
-const extractJsonPayload = (response: string) => {
-  const fencedMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fencedMatch ? fencedMatch[1] : response;
-  const trimmed = candidate.trim();
-
-  try {
-    JSON.parse(trimmed);
-    return trimmed;
-  } catch {
-    const start = trimmed.indexOf('{');
-    const end = trimmed.lastIndexOf('}');
-    if (start !== -1 && end !== -1 && end > start) {
-      return trimmed.slice(start, end + 1);
-    }
-    return trimmed;
-  }
 };
 
 const buildPromptSuggestionsPrompt = (portfolio: ReturnType<typeof getPortfolioSnapshot>, seed: string) => {

@@ -1,6 +1,7 @@
 'use server';
 
 import { generateAiText, enforceAiCooldown } from '@/ai/client';
+import { extractJsonPayload } from '@/ai/extract-json-payload';
 import { z } from 'zod';
 
 const PortfolioProjectSchema = z.object({
@@ -189,24 +190,6 @@ const buildBlockedAnswer = (question: string, reason: 'length' | 'injection') =>
 
 const isPromptInjection = (question: string) =>
   PROMPT_INJECTION_PATTERNS.some(pattern => pattern.test(question));
-
-const extractJsonPayload = (response: string) => {
-  const fencedMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fencedMatch ? fencedMatch[1] : response;
-  const trimmed = candidate.trim();
-
-  try {
-    JSON.parse(trimmed);
-    return trimmed;
-  } catch {
-    const start = trimmed.indexOf('{');
-    const end = trimmed.lastIndexOf('}');
-    if (start !== -1 && end !== -1 && end > start) {
-      return trimmed.slice(start, end + 1);
-    }
-    return trimmed;
-  }
-};
 
 const buildAskPrompt = (input: GenerateAskResponseInput) => {
   const portfolioJson = JSON.stringify(input.portfolio, null, 2);
