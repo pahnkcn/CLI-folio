@@ -1,6 +1,6 @@
 import { Github, Linkedin, Mail } from 'lucide-react';
 
-export const COMMANDS = ['help', 'ask', 'aboutme', 'skills', 'projects', 'project', 'experience', 'contact', 'clear'] as const;
+export const COMMANDS = ['help', 'ask', 'aboutme', 'skills', 'skill', 'projects', 'project', 'experience', 'contact', 'clear'] as const;
 
 export const ABOUTME_TEXT = `Dev/DevOps Engineer. I build and automate scalable, reliable cloud systems.
 Passionate about CI/CD, Infrastructure as Code, and making developers' lives easier.`;
@@ -25,6 +25,59 @@ export const SKILLS = [
   {
     category: 'Systems & Platforms',
     items: ['Linux'],
+  },
+];
+
+export const SKILL_DETAILS = [
+  {
+    name: 'AWS',
+    level: 'Advanced',
+    summary: 'Designing and automating AWS infrastructure (EC2, ASG, ELB, VPC, IAM) with security, reliability, and cost awareness.',
+  },
+  {
+    name: 'Terraform',
+    level: 'Advanced',
+    summary: 'Building modular IaC stacks, managing remote state, and standardizing reusable infrastructure patterns.',
+  },
+  {
+    name: 'Ansible',
+    level: 'Intermediate',
+    summary: 'Writing playbooks for provisioning, configuration management, and repeatable environment setups.',
+  },
+  {
+    name: 'Docker',
+    level: 'Advanced',
+    summary: 'Containerizing applications with multi-stage builds, optimized images, and reproducible dev workflows.',
+  },
+  {
+    name: 'Kubernetes',
+    level: 'Intermediate',
+    summary: 'Operating workloads with deployments, services, ingress, and basic cluster troubleshooting.',
+  },
+  {
+    name: 'CI/CD',
+    level: 'Advanced',
+    summary: 'Designing pipelines for build, test, and deploy workflows with quality gates and environment promotion.',
+  },
+  {
+    name: 'GitHub Actions',
+    level: 'Advanced',
+    summary: 'Authoring reusable workflows, matrix builds, and secure secrets handling for automated delivery.',
+  },
+  {
+    name: 'Prometheus',
+    level: 'Intermediate',
+    summary: 'Setting up metrics collection, alert rules, and monitoring baselines for services and infrastructure.',
+  },
+  {
+    name: 'Grafana',
+    level: 'Intermediate',
+    summary: 'Building dashboards and alert visualizations for performance and reliability insights.',
+  },
+  {
+    name: 'Linux',
+    level: 'Advanced',
+    summary: 'Daily CLI usage, system tuning, service management, and troubleshooting in production environments.',
   },
 ];
 

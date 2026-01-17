@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { COMMANDS, ABOUTME_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO, SKILLS } from './data';
+import { COMMANDS, ABOUTME_TEXT, PROJECTS, EXPERIENCE, CONTACT_INFO, SKILLS, SKILL_DETAILS } from './data';
 import { generateAskResponse } from '@/ai/flows/generate-ask-response';
 import { useToast } from "@/hooks/use-toast"
 
@@ -166,9 +166,11 @@ const getHelp = () => (
     {COMMANDS.map(cmd => {
       const label = cmd === 'project'
         ? 'project <name>'
-        : cmd === 'ask'
-          ? 'ask "<question>"'
-          : cmd;
+        : cmd === 'skill'
+          ? 'skill <name>'
+          : cmd === 'ask'
+            ? 'ask "<question>"'
+            : cmd;
       return <span key={cmd}>{label}</span>;
     })}
   </div>
@@ -180,6 +182,7 @@ const getAboutMe = () => (
 
 const getSkills = () => (
   <div className="space-y-4">
+    <p>Use 'skill &lt;name&gt;' to view details.</p>
     {SKILLS.map(group => (
       <div key={group.category}>
         <p className="text-xs uppercase tracking-[0.2em] text-accent/80">{group.category}</p>
@@ -190,6 +193,24 @@ const getSkills = () => (
     ))}
   </div>
 );
+
+const normalizeSkillName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const getSkillDetails = (name: string) => {
+  const normalizedName = normalizeSkillName(name);
+  const skill = SKILL_DETAILS.find(item => normalizeSkillName(item.name) === normalizedName);
+  if (!skill) {
+    return <p>Skill not found: {name}. Try 'skills' to see a list of available skills.</p>;
+  }
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-accent">{skill.name}</h3>
+      <p className="text-xs uppercase tracking-[0.2em] text-accent/80">{skill.level}</p>
+      <p className="mt-2 whitespace-pre-wrap">{skill.summary}</p>
+    </div>
+  );
+};
 
 type ProjectItem = (typeof PROJECTS)[number];
 
@@ -336,6 +357,9 @@ export const getCommandOutput = async (commandStr: string): Promise<React.ReactN
       return getAboutMe();
     case 'skills':
       return getSkills();
+    case 'skill':
+      if (args.length === 0) return <p>Please specify a skill name. Use 'skills' to see a list.</p>;
+      return getSkillDetails(args.join(' '));
     case 'projects':
       return getProjects();
     case 'project':
