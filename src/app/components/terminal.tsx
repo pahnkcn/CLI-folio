@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getCommandOutput } from '@/lib/commands';
+import { generatePromptSuggestions } from '@/ai/flows/generate-prompt-suggestions';
 import { COMMANDS, PROJECTS } from '@/lib/data';
 
 type HistoryItem = {
@@ -15,6 +16,11 @@ type AiStatus = {
   provider: string;
 };
 
+type AiPrompt = {
+  label: string;
+  command: string;
+};
+
 const ASCII_ART = [
   '  ____ _     ___        __       _ _       ',
   ' / ___| |   |_ _|      / _| ___ | (_) ___  ',
@@ -24,7 +30,7 @@ const ASCII_ART = [
 ];
 
 const QUICK_ACTIONS = ['help', 'aboutme', 'projects', 'contact'];
-const AI_PROMPTS = [
+const DEFAULT_AI_PROMPTS: AiPrompt[] = [
   {
     label: 'Impact highlights',
     command: 'ask "What measurable impact did you drive in your roles?"',
@@ -38,14 +44,54 @@ const AI_PROMPTS = [
     command: 'ask "How did you improve CI/CD speed and reliability?"',
   },
   {
-    label: 'System design',
-    command: 'ask "Walk through a system you designed and the tradeoffs you made."',
-  },
-  {
-    label: 'Team leadership',
-    command: 'ask "How do you mentor teams and keep delivery reliable?"',
+    label: 'Automation wins',
+    command: 'ask "Which automation work saved the most engineering time?"',
   },
 ];
+const AI_PROMPT_CACHE_KEY = 'terminal-ai-prompts';
+const AI_PROMPT_CACHE_TIMESTAMP_KEY = 'terminal-ai-prompts:timestamp';
+const AI_PROMPT_CACHE_MS = 120000;
+
+const formatAskCommand = (question: string) => `ask "${question}"`;
+
+const parseCachedPrompts = (raw: string | null): AiPrompt[] | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    const valid = parsed
+      .filter((prompt: AiPrompt) => Boolean(prompt?.label && prompt?.command))
+      .map((prompt: AiPrompt) => ({
+        label: prompt.label.trim(),
+        command: prompt.command.trim(),
+      }))
+      .filter(prompt => prompt.label && prompt.command);
+    return valid.length ? valid : null;
+  } catch {
+    return null;
+  }
+};
+
+const readCachedPrompts = () => {
+  if (typeof window === 'undefined') return null;
+  const cached = parseCachedPrompts(window.localStorage.getItem(AI_PROMPT_CACHE_KEY));
+  if (!cached) return null;
+  const timestampRaw = window.localStorage.getItem(AI_PROMPT_CACHE_TIMESTAMP_KEY);
+  const timestamp = Number.parseInt(timestampRaw ?? '', 10);
+  return {
+    prompts: cached,
+    timestamp: Number.isFinite(timestamp) ? timestamp : 0,
+  };
+};
+
+const writeCachedPrompts = (prompts: AiPrompt[]) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(AI_PROMPT_CACHE_KEY, JSON.stringify(prompts));
+  window.localStorage.setItem(AI_PROMPT_CACHE_TIMESTAMP_KEY, String(Date.now()));
+};
+
+const isCooldownError = (error: unknown) =>
+  error instanceof Error && error.message.startsWith('AI_COOLDOWN:');
 
 type TerminalProps = {
   aiStatus: AiStatus;
@@ -60,6 +106,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
   const [booting, setBooting] = useState(true);
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState('');
+  const [aiPrompts, setAiPrompts] = useState<AiPrompt[]>(DEFAULT_AI_PROMPTS);
 
   const suggestions = useMemo(() => {
     const normalizedInput = input.trimStart().toLowerCase();
@@ -90,6 +137,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
   const isAiConfigured = aiStatus?.configured ?? false;
   const aiBadgeTone = isAiConfigured ? 'bg-emerald-400' : 'bg-rose-400';
   const aiBadgeLabel = isAiConfigured ? `AI online · ${aiStatus.label}` : 'AI offline';
+  const activeAiPrompts = aiPrompts.length ? aiPrompts : DEFAULT_AI_PROMPTS;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -97,6 +145,49 @@ export function Terminal({ aiStatus }: TerminalProps) {
   useEffect(() => {
     setCurrentTime(new Date().toString());
   }, []);
+
+  useEffect(() => {
+    if (!isAiConfigured) {
+      setAiPrompts(DEFAULT_AI_PROMPTS);
+      return;
+    }
+
+    const cached = readCachedPrompts();
+    if (cached?.prompts?.length) {
+      setAiPrompts(cached.prompts);
+    }
+
+    const cacheFresh = cached && Date.now() - cached.timestamp < AI_PROMPT_CACHE_MS;
+    if (cacheFresh) return;
+
+    let cancelled = false;
+
+    const loadPrompts = async () => {
+      try {
+        const result = await generatePromptSuggestions();
+        if (cancelled) return;
+        const prompts = result.prompts.map(prompt => ({
+          label: prompt.label,
+          command: formatAskCommand(prompt.question),
+        }));
+        if (prompts.length) {
+          setAiPrompts(prompts);
+          writeCachedPrompts(prompts);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        if (!isCooldownError(error)) {
+          console.error('Failed to load AI prompt suggestions.', error);
+        }
+      }
+    };
+
+    loadPrompts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAiConfigured]);
 
   useEffect(() => {
     if (!currentTime) return;
@@ -283,7 +374,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                {AI_PROMPTS.map(prompt => (
+                {activeAiPrompts.map((prompt: AiPrompt) => (
                   <button
                     key={prompt.label}
                     type="button"

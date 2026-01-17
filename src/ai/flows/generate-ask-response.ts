@@ -24,6 +24,21 @@ const PortfolioExperienceSchema = z.object({
   description: z.string(),
 });
 
+const PortfolioEducationSchema = z.object({
+  school: z.string(),
+  program: z.string(),
+  period: z.string(),
+  highlights: z.array(z.string()),
+});
+
+const PortfolioResumeSchema = z.object({
+  headline: z.string(),
+  summary: z.string(),
+  highlights: z.array(z.string()),
+  downloadLink: z.string().optional().nullable(),
+  lastUpdated: z.string(),
+});
+
 const PortfolioContactSchema = z.object({
   name: z.string(),
   value: z.string(),
@@ -35,6 +50,8 @@ const PortfolioSnapshotSchema = z.object({
   skills: z.array(PortfolioSkillGroupSchema),
   projects: z.array(PortfolioProjectSchema),
   experience: z.array(PortfolioExperienceSchema),
+  education: z.array(PortfolioEducationSchema),
+  resume: PortfolioResumeSchema,
   contact: z.array(PortfolioContactSchema),
 });
 

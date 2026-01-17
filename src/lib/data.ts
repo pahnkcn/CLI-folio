@@ -180,3 +180,44 @@ export const CONTACT_INFO = [
     icon: Linkedin,
   },
 ];
+
+export type PortfolioSnapshot = {
+  aboutMe: string;
+  skills: { category: string; items: string[] }[];
+  projects: {
+    name: string;
+    title: string;
+    category: string;
+    technologies: string;
+    description: string;
+    link?: string;
+  }[];
+  experience: typeof EXPERIENCE;
+  education: typeof EDUCATION;
+  resume: typeof RESUME;
+  contact: { name: string; value: string; href: string }[];
+};
+
+export const getPortfolioSnapshot = (): PortfolioSnapshot => ({
+  aboutMe: ABOUTME_TEXT,
+  skills: SKILLS.map(group => ({
+    category: group.category,
+    items: group.items,
+  })),
+  projects: PROJECTS.map(project => ({
+    name: project.name,
+    title: project.title,
+    category: project.category,
+    technologies: project.technologies,
+    description: project.description,
+    link: project.link,
+  })),
+  experience: EXPERIENCE,
+  education: EDUCATION,
+  resume: RESUME,
+  contact: CONTACT_INFO.map(item => ({
+    name: item.name,
+    value: item.value,
+    href: item.href,
+  })),
+});

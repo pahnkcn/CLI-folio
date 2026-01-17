@@ -10,6 +10,7 @@ import {
   CONTACT_INFO,
   SKILLS,
   SKILL_DETAILS,
+  getPortfolioSnapshot,
 } from './data';
 import { generateAskResponse } from '@/ai/flows/generate-ask-response';
 import { useToast } from "@/hooks/use-toast"
@@ -345,30 +346,6 @@ const getContact = () => (
     ))}
   </div>
 );
-
-const getPortfolioSnapshot = () => ({
-  aboutMe: ABOUTME_TEXT,
-  skills: SKILLS.map(group => ({
-    category: group.category,
-    items: group.items,
-  })),
-  projects: PROJECTS.map(project => ({
-    name: project.name,
-    title: project.title,
-    category: project.category,
-    technologies: project.technologies,
-    description: project.description,
-    link: project.link,
-  })),
-  experience: EXPERIENCE,
-  education: EDUCATION,
-  resume: RESUME,
-  contact: CONTACT_INFO.map(item => ({
-    name: item.name,
-    value: item.value,
-    href: item.href,
-  })),
-});
 
 const getAskResponse = async (question: string) => {
   const trimmedQuestion = question.trim();
