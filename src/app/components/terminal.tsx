@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getCommandOutput } from '@/lib/commands';
 import { generatePromptSuggestions } from '@/ai/flows/generate-prompt-suggestions';
-import { COMMANDS, PROJECTS } from '@/lib/data';
+import { COMMANDS, PROJECTS, SKILL_DETAILS } from '@/lib/data';
 
 type HistoryItem = {
   command: string;
@@ -108,25 +108,50 @@ export function Terminal({ aiStatus }: TerminalProps) {
   const [currentTime, setCurrentTime] = useState('');
   const [aiPrompts, setAiPrompts] = useState<AiPrompt[]>(DEFAULT_AI_PROMPTS);
 
+  const typedInput = input.trimStart();
+  const normalizedInput = typedInput.toLowerCase();
+
   const suggestions = useMemo(() => {
-    const normalizedInput = input.trimStart().toLowerCase();
     if (!normalizedInput) return [];
-    if (normalizedInput === 'project' || normalizedInput.startsWith('project ')) {
-      const typedProject = normalizedInput.replace(/^project\s*/, '');
+    const [commandToken] = normalizedInput.split(' ');
+    const argsText = normalizedInput.slice(commandToken.length).trim();
+    if (commandToken === 'project') {
+      const typedProject = argsText;
       return PROJECTS
         .map(project => project.name)
-        .filter(name => name.startsWith(typedProject))
+        .filter(name => name.toLowerCase().startsWith(typedProject))
         .map(name => `project ${name}`);
+    }
+    if (commandToken === 'skill') {
+      const typedSkill = argsText;
+      return SKILL_DETAILS
+        .map(skill => skill.name)
+        .filter(name => name.toLowerCase().startsWith(typedSkill))
+        .map(name => `skill ${name}`);
     }
     if (normalizedInput.includes(' ')) return [];
     return COMMANDS.filter(command => command.startsWith(normalizedInput));
-  }, [input]);
+  }, [normalizedInput]);
 
   const hasUniqueSuggestion = suggestions.length === 1;
   const activeSuggestion = hasUniqueSuggestion ? suggestions[0] : '';
-  const suggestionSuffix = hasUniqueSuggestion && input && activeSuggestion.toLowerCase().startsWith(input.toLowerCase())
-    ? activeSuggestion.slice(input.length)
+  const suggestionSuffix = hasUniqueSuggestion && typedInput && activeSuggestion.toLowerCase().startsWith(normalizedInput)
+    ? activeSuggestion.slice(typedInput.length)
     : '';
+  const primarySuggestion = suggestions[0] ?? '';
+  const getSuggestionParts = (suggestion: string) => {
+    if (!normalizedInput) {
+      return { leading: '', trailing: suggestion };
+    }
+    const suggestionLower = suggestion.toLowerCase();
+    if (!suggestionLower.startsWith(normalizedInput)) {
+      return { leading: '', trailing: suggestion };
+    }
+    return {
+      leading: suggestion.slice(0, typedInput.length),
+      trailing: suggestion.slice(typedInput.length),
+    };
+  };
   const statusTone = booting ? 'bg-yellow-400' : isProcessing ? 'bg-sky-400' : 'bg-emerald-400';
   const statusLabel = booting ? 'Booting systems' : isProcessing ? 'Processing' : 'System online';
   const statusHint = booting
@@ -429,19 +454,33 @@ export function Terminal({ aiStatus }: TerminalProps) {
           {!isProcessing && !booting && (
             <div className="flex items-center gap-2 animate-rise">
               <span className="text-accent drop-shadow">user@portfolio:~$</span>
-              <span>{input}</span>
+              <span className="text-foreground/90">{typedInput}</span>
               <span className="h-4 w-2 rounded-sm bg-primary shadow-[0_0_12px_rgba(152,251,152,0.7)] animate-blink"></span>
               {suggestionSuffix && (
-                <span className="text-muted-foreground">{suggestionSuffix}</span>
+                <span className="text-muted-foreground/70">
+                  <span className="text-accent/90">{primarySuggestion.slice(0, typedInput.length)}</span>
+                  {suggestionSuffix}
+                </span>
               )}
             </div>
           )}
           {!isProcessing && !booting && suggestions.length > 1 && (
             <div className="ml-6 flex flex-wrap gap-x-4 gap-y-1 rounded-lg border border-border/40 bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-              <span className="text-accent/80">suggestions:</span>
-              {suggestions.map(suggestion => (
-                <span key={suggestion}>{suggestion}</span>
-              ))}
+              <span className="text-accent/80 flex items-center justify-center">suggestions:</span>
+              {suggestions.map(suggestion => {
+                const parts = getSuggestionParts(suggestion);
+                return (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => handleQuickAction(suggestion)}
+                    className="rounded-full border border-border/50 bg-background/40 px-2 py-0.5 text-[11px] text-foreground/70 transition hover:border-accent/60 hover:text-foreground"
+                  >
+                    <span className="text-accent/80">{parts.leading}</span>
+                    <span>{parts.trailing}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
