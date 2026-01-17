@@ -99,7 +99,7 @@ const PROMPT_INJECTION_PATTERNS: RegExp[] = [
    * ===================================================== */
   /\byou\s+are\s+(now\s+)?(no\s+longer\s+)?(an\s+)?(assistant|chatgpt|ai)/i,
   /\byou\s+are\s+/i,
-  /\bact\s+as\b/i,
+  /\bact\s+as\s+(an?\s+)?(assistant|system|developer|expert|teacher|tutor|bot|ai|language\s+model|simulator|terminal|console|interpreter|shell)\b/i,
   /\bpretend\s+to\s+be\b/i,
   /\brole\s*play\b/i,
   /\bsimulate\b\s+(being|a|conversation|terminal|console)/i,
