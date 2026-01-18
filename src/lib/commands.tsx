@@ -140,6 +140,44 @@ const buildAsciiBar = (score: number) => {
 
 const formatSkillScore = (score: number) => `${Math.round(score)}%`;
 
+const CAT_ART = [
+  '⠀⠀⠀⢀⡴⠲⣄⠀⠀⢀⡶⠲⡄⠀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⣀⣀⣀⣾⠁⠀⠹⠿⠟⠟⠀⠀⠙⣛⣉⡻⠿⠋⣿⣷⢦⣄⠀⠀⠀⠀⠀⠀',
+  '⠭⠭⣽⠇⠀⠶⠀⢴⣦⠀⠶⠆⠸⠯⠭⠄⠀⠀⠀⠀⠀⠙⢧⡀⠀⢀⣤⣤',
+  '⠀⠀⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢷⣤⣾⣻⡟',
+  '⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣧⠽⠋⠀',
+  '⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠀⠀⠀⠀',
+  '⠀⠀⢷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀⠀⠀⠀',
+  '⠀⠀⠈⠳⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠟⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠉⠿⠟⠛⠛⠻⠾⠛⠛⠛⠛⠻⠟⠛⠛⠻⠾⠃⠀⠀⠀⠀⠀⠀'
+].join('\n');
+
+const COFFEE_ART = [
+  '   ( (',
+  '    ) )',
+  '  ........',
+  '  |      |]',
+  '  \\      /',
+  "   `----'",
+].join('\n');
+
+const COFFEE_OUTPUT = [COFFEE_ART, '', 'Coffee deployed.'].join('\n');
+
+const FORTUNES = [
+  'Keep it simple, keep it shipping.',
+  'Automate the boring stuff.',
+  'Uptime is a feature.',
+  'No alerts is the best alert.',
+  'Ship small, learn fast.',
+  'Logs tell stories. Listen.',
+];
+
+const pickRandom = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
+
+const renderAscii = (text: string, className = 'text-accent') => (
+  <pre className={`whitespace-pre-wrap ${className}`}>{text}</pre>
+);
+
 const getEditDistance = (source: string, target: string) => {
   const sourceLength = source.length;
   const targetLength = target.length;
@@ -432,6 +470,12 @@ export const getCommandOutput = async (commandStr: string): Promise<React.ReactN
       return await getAskResponse(argsText);
     case 'clear':
       return ''; // special case handled in terminal component
+    case 'cat':
+      return renderAscii(CAT_ART);
+    case 'fortune':
+      return <p className="text-accent">{pickRandom(FORTUNES)}</p>;
+    case 'coffee':
+      return renderAscii(COFFEE_OUTPUT);
     default:
       const closestCommand = getClosestCommand(command);
       if (closestCommand) {
