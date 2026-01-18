@@ -172,6 +172,13 @@ export function Terminal({ aiStatus }: TerminalProps) {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = useCallback(() => {
+    if (!scrollAreaRef.current) return;
+    const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }, []);
   const syncCursor = useCallback((nextIndex: number) => {
     setCursorIndex(nextIndex);
     requestAnimationFrame(() => {
@@ -268,16 +275,17 @@ export function Terminal({ aiStatus }: TerminalProps) {
   }, [focusInput, booting]);
   
   useEffect(() => {
-    if (scrollAreaRef.current) {
-        const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-        if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
-        }
-    }
+    scrollToBottom();
     if (!isProcessing && !booting) {
       focusInput();
     }
-  }, [history, isProcessing, focusInput, bootLines, booting]);
+  }, [history, isProcessing, focusInput, bootLines, booting, scrollToBottom]);
+
+  useEffect(() => {
+    if (suggestions.length > 0) {
+      scrollToBottom();
+    }
+  }, [suggestions.length, scrollToBottom]);
 
 
   const handleCommand = useCallback(async (commandStr: string) => {
