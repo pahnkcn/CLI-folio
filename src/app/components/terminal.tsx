@@ -29,7 +29,7 @@ const ASCII_ART = [
   ' \\____|_____|___|     |_|  \\___/|_|_|\\___/ ',
 ];
 
-const QUICK_ACTIONS = ['help', 'aboutme', 'projects', 'contact'];
+const QUICK_ACTIONS = ['help', 'aboutme', 'resume', 'contact'];
 const DEFAULT_AI_PROMPTS: AiPrompt[] = [
   {
     label: 'Impact highlights',
@@ -338,6 +338,33 @@ export function Terminal({ aiStatus }: TerminalProps) {
     return true;
   }, [activeSuggestion, isCursorAtEnd, suggestionSuffix, syncCursor]);
 
+  const applyHistoryIndex = useCallback((nextIndex: number) => {
+    if (nextIndex < 0) {
+      setHistoryIndex(-1);
+      setInput('');
+      syncCursor(0);
+      return;
+    }
+    const nextCommand = commandHistory[nextIndex] ?? '';
+    setHistoryIndex(nextIndex);
+    setInput(nextCommand);
+    syncCursor(nextCommand.length);
+  }, [commandHistory, syncCursor]);
+
+  const navigateHistory = useCallback((direction: 'up' | 'down') => {
+    if (direction === 'up') {
+      if (historyIndex < commandHistory.length - 1) {
+        applyHistoryIndex(historyIndex + 1);
+      }
+      return;
+    }
+    if (historyIndex > 0) {
+      applyHistoryIndex(historyIndex - 1);
+    } else {
+      applyHistoryIndex(-1);
+    }
+  }, [applyHistoryIndex, commandHistory.length, historyIndex]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (isProcessing || booting) return;
 
@@ -345,24 +372,10 @@ export function Terminal({ aiStatus }: TerminalProps) {
       handleCommand(input);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (historyIndex < commandHistory.length - 1) {
-        const newIndex = historyIndex + 1;
-        setHistoryIndex(newIndex);
-        setInput(commandHistory[newIndex]);
-        syncCursor(commandHistory[newIndex].length);
-      }
+      navigateHistory('up');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (historyIndex > 0) {
-        const newIndex = historyIndex - 1;
-        setHistoryIndex(newIndex);
-        setInput(commandHistory[newIndex]);
-        syncCursor(commandHistory[newIndex].length);
-      } else if (historyIndex <= 0) {
-        setHistoryIndex(-1);
-        setInput('');
-        syncCursor(0);
-      }
+      navigateHistory('down');
     } else if (e.key === 'Tab') {
       e.preventDefault();
       applySuggestion();
@@ -523,6 +536,28 @@ export function Terminal({ aiStatus }: TerminalProps) {
                   </span>
                 )}
               </div>
+            </div>
+          )}
+          {!isProcessing && !booting && commandHistory.length > 0 && (
+            <div className="flex flex-wrap gap-2 sm:hidden">
+              <button
+                type="button"
+                onClick={() => navigateHistory('up')}
+                disabled={historyIndex >= commandHistory.length - 1}
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/60 px-3 py-1 text-[11px] text-foreground/80 transition hover:border-accent/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className="text-accent/90">↑</span>
+                Previous command
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateHistory('down')}
+                disabled={historyIndex < 0}
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-secondary/60 px-3 py-1 text-[11px] text-foreground/80 transition hover:border-accent/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className="text-accent/90">↓</span>
+                Newer command
+              </button>
             </div>
           )}
           {!isProcessing && !booting && showMobileAutocomplete && (
