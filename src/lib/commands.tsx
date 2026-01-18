@@ -247,7 +247,7 @@ const getHelp = () => (
       </div>
 
       <div className="border-l-2 border-accent/20 pl-4">
-        <HelpCommand command={'ask "<question>"'}>ask "&lt;question&gt;"</HelpCommand>
+        <HelpCommand command='ask "'>ask "&lt;question&gt;"</HelpCommand>
         <div className="text-xs text-muted-foreground mb-1">Ask me anything! Get AI-powered responses to your questions</div>
       </div>
 
