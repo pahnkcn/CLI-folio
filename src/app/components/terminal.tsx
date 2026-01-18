@@ -145,7 +145,6 @@ export function Terminal({ aiStatus }: TerminalProps) {
     : '';
   const showSuggestion = isCursorAtEnd && suggestionSuffix;
   const primarySuggestion = suggestions[0] ?? '';
-  const showMobileAutocomplete = showSuggestion && Boolean(activeSuggestion);
   const getSuggestionParts = (suggestion: string) => {
     if (!normalizedInput) {
       return { leading: '', trailing: suggestion };
@@ -518,7 +517,7 @@ export function Terminal({ aiStatus }: TerminalProps) {
                   onKeyDown={handleKeyDown}
                   onSelect={handleSelectionChange}
                   onClick={handleSelectionChange}
-                  className="absolute inset-0 h-full w-full bg-transparent text-transparent caret-transparent outline-none"
+                  className="absolute inset-0 z-0 h-full w-full bg-transparent text-transparent caret-transparent outline-none"
                   autoFocus
                   disabled={isProcessing || booting}
                   autoComplete="off"
@@ -526,14 +525,23 @@ export function Terminal({ aiStatus }: TerminalProps) {
                   autoCorrect="off"
                   aria-label="Terminal input"
                 />
-                {inputBeforeCursor}
-                <span className="inline-block h-[1em] w-2 align-text-bottom rounded-sm bg-primary shadow-[0_0_12px_rgba(152,251,152,0.7)] animate-blink"></span>
-                {inputAfterCursor}
+                <span className="relative z-10 pointer-events-none">
+                  {inputBeforeCursor}
+                  <span className="inline-block h-[1em] w-2 align-text-bottom rounded-sm bg-primary shadow-[0_0_12px_rgba(152,251,152,0.7)] animate-blink"></span>
+                  {inputAfterCursor}
+                </span>
                 {showSuggestion && (
-                  <span className="text-muted-foreground/70">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      applySuggestion();
+                      focusInput();
+                    }}
+                    className="relative z-10 inline-flex items-baseline border-0 bg-transparent p-0 text-muted-foreground/70 transition hover:text-foreground"
+                  >
                     <span className="text-accent/90">{primarySuggestion.slice(0, typedInput.length)}</span>
                     {suggestionSuffix}
-                  </span>
+                  </button>
                 )}
               </div>
             </div>
@@ -559,16 +567,6 @@ export function Terminal({ aiStatus }: TerminalProps) {
                 Newer command
               </button>
             </div>
-          )}
-          {!isProcessing && !booting && showMobileAutocomplete && (
-            <button
-              type="button"
-              onClick={() => applySuggestion()}
-              className="ml-0 inline-flex w-fit items-center gap-2 rounded-full border border-accent/50 bg-secondary/60 px-3 py-1 text-[11px] text-foreground/80 transition hover:border-accent hover:bg-secondary/80 hover:text-foreground sm:hidden"
-            >
-              <span className="text-accent/90">Tap to autocomplete</span>
-              <span className="truncate">{activeSuggestion}</span>
-            </button>
           )}
           {!isProcessing && !booting && suggestions.length > 1 && (
             <div className="ml-0 flex flex-wrap gap-x-4 gap-y-1 rounded-lg border border-border/40 bg-secondary/40 px-3 py-2 text-xs text-muted-foreground sm:ml-6">
