@@ -214,17 +214,76 @@ const getClosestCommand = (input: string) => {
 
 
 const getHelp = () => (
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
-    {COMMANDS.map(cmd => {
-      const label = cmd === 'project'
-        ? 'project <name>'
-        : cmd === 'skill'
-          ? 'skill <name>'
-          : cmd === 'ask'
-            ? 'ask "<question>"'
-            : cmd;
-      return <span key={cmd}>{label}</span>;
-    })}
+  <div className="space-y-6">
+    <div>
+      <div className="space-y-3">
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">help</div>
+          <div className="text-xs text-muted-foreground mt-1">Show this help message with all available commands</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">ask "&lt;question&gt;"</div>
+          <div className="text-xs text-muted-foreground mt-1">Ask me anything! Get AI-powered responses to your questions</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">aboutme</div>
+          <div className="text-xs text-muted-foreground mt-1">Learn more about my background and what I do</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">skills</div>
+          <div className="text-xs text-muted-foreground mt-1">View all my technical skills organized by category</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">skill &lt;name&gt;</div>
+          <div className="text-xs text-muted-foreground mt-1">Get detailed information about a specific skill</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">projects</div>
+          <div className="text-xs text-muted-foreground mt-1">Browse my portfolio of projects</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">project &lt;name&gt;</div>
+          <div className="text-xs text-muted-foreground mt-1">View detailed information about a specific project</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">experience</div>
+          <div className="text-xs text-muted-foreground mt-1">View my work experience and professional history</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">education</div>
+          <div className="text-xs text-muted-foreground mt-1">View my educational background</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">resume</div>
+          <div className="text-xs text-muted-foreground mt-1">Get a link to download my full resume</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">contact</div>
+          <div className="text-xs text-muted-foreground mt-1">View my contact information and social links</div>
+        </div>
+        
+        <div className="border-l-2 border-accent/20 pl-4">
+          <div className="font-mono text-sm">clear</div>
+          <div className="text-xs text-muted-foreground mt-1">Clear the terminal screen</div>
+        </div>
+      </div>
+      <div className="mt-4"></div>
+    </div>
+    
+    <div className="text-xs text-muted-foreground border-t border-accent/20 pt-3">
+      <p>💡 <strong>Tip:</strong> Use arrow keys to navigate through command history!</p>
+      <p>🤖 <strong>AI Commands:</strong> 'ask' and 'fortine' use AI with a 15-second delay between requests</p>
+    </div>
   </div>
 );
 
