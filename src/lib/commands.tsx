@@ -330,12 +330,7 @@ const getSkills = () => (
 
 const FORTUNE_STORAGE_KEY = 'terminal-portfolio:fortune';
 
-const getLocalDayKey = () => {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
-};
+const getLocalDayKey = () => new Date().toISOString().split('T')[0];
 
 const readDailyFortune = (dayKey: string) => {
   if (typeof window === 'undefined') return null;
